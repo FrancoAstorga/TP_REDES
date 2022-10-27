@@ -115,7 +115,7 @@ string solicitarCalculo(){
     //cin>>calculo;
     cin.ignore();
     getline(cin,calculo);
-    cout<<calculo<<endl;
+    cout<<"Solicitud Cliente: "<<calculo<<endl;
     return calculo;
 }
 
@@ -123,6 +123,7 @@ void menu(Client *&cliente)
 {
     //contador de 2 minutos
     int opcion;
+    string texto="";
 
     cout<<"Ingrese una opcion"<<endl;
     cout<<"1- Realizar calculo "<<endl;
@@ -132,14 +133,24 @@ void menu(Client *&cliente)
    
     switch(opcion)
     {
-        case 1:cliente->Enviar("1"+solicitarCalculo());break;
-        case 2:cliente->Enviar("2");break;
+        case 1:cliente->Enviar("1"+solicitarCalculo());cout<<"Respuesta Servidor: "<<cliente->Recibir()<<endl;break;
+        case 2:
+            cliente->Enviar("2");
+            texto=cliente->Recibir();
+            for(int i=0;i<texto.size();i++){
+                if(texto[i]=='.')
+                {
+                    cout<<endl;
+                }
+                else{cout<<texto[i];}
+            };break;
         case 3:cliente->CerrarSocket();break;
         default:cout<<"Opcion incorrecta";break;//tiene que volver a preguntar
-    }
+    
 
-    string resultado=cliente->Recibir();
-    cout<<"Respuesta Servidor: "<<resultado<<endl;
+    // string resultado=cliente->Recibir();
+    // cout<<"Respuesta Servidor: "<<resultado<<endl;
+    }
 }
 
 

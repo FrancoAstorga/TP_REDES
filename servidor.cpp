@@ -151,7 +151,7 @@ public:
         if ((client = accept(server, (SOCKADDR *)&clientAddr, &clientAddrSize)) != INVALID_SOCKET)
         {
             cout << "Cliente conectado!" << endl;
-            escribir("Conexion Aceptada");
+            escribir(" Conexion Aceptada.");
         }
     }
 
@@ -160,7 +160,7 @@ public:
         closesocket(client);
         WSACleanup();
         cout << "Socket cerrado, cliente desconectado." << endl;
-        escribir("Conexion Cerrada por Inactividad.");
+        escribir(" Conexion Cerrada por Inactividad.");
     }
 
     void IniciarServer()
@@ -336,7 +336,6 @@ void manejarPeticion(Server *&Servidor)
     }
     //*************************************************************************************************
     else if(peticion[0] == '2'){
-        cout<<"LEER ARCHIVO :"<<leerArchivo()<<endl;
         Servidor->Enviar(leerArchivo());
     }
 
@@ -358,11 +357,11 @@ int main()
 
         Server *Servidor = new Server();
 
-        string puertoEscucha = "Socket creado. Puerto de escucha: " + to_string(Servidor->getPuerto());
-        escribir("=============================");
-        escribir("=======Inicia Servidor=======");
-        escribir("=============================");
-        escribir("Socket creado. Puerto de escucha:"+puerto_global);
+        string puertoEscucha = "Socket creado, Puerto de escucha: " + to_string(Servidor->getPuerto());
+        escribir(" =============================.");
+        escribir(" =======Inicia Servidor=======.");
+        escribir(" =============================.");
+        escribir(" Socket creado, Puerto de escucha:"+puerto_global+".");
 
         Servidor->ConectarSocket();
         manejarPeticion(Servidor);
