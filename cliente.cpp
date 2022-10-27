@@ -3,17 +3,16 @@
 #include <conio.h>
 #include <string>
 #include <algorithm>
-#include <clocale>//es para usar � y acento
-#include <ctime>//para comparar la fecha con la fecha actual
+#include <ctime>
 #include <cstdlib>
 #include <vector>
 
-
 using namespace std;
 
-vector<string> verificarIpYPuerto(){
+vector<string> verificarIpYPuerto()
+{
 
-    std::string ipInput="127.0.0.1";
+    std::string ipInput = "127.0.0.1";
     std::string puertoInput = "5000";
     vector<string> datos;
 
@@ -29,25 +28,25 @@ vector<string> verificarIpYPuerto(){
     //     system("CLS");
     // }
 
-
     datos.push_back(ipInput);
     datos.push_back(puertoInput);
 
     return datos;
 }
 
-
-class Client{
+class Client
+{
 public:
     WSADATA WSAData;
     SOCKET server;
     SOCKADDR_IN addr;
-    char buffer[1024];
+    char buffer[1024] = "";
     Client()
     {
-        cout<<"Conectando al servidor..."<<endl<<endl;
+        cout << "Conectando al servidor..." << endl
+             << endl;
 
-        WSAStartup(MAKEWORD(2,0), &WSAData);
+        WSAStartup(MAKEWORD(2, 0), &WSAData);
         server = socket(AF_INET, SOCK_STREAM, 0);
 
         vector<string> datos = verificarIpYPuerto();
@@ -64,107 +63,115 @@ public:
         addr.sin_port = htons(stol(datos[1]));
 
         int crespuesta = connect(server, (SOCKADDR *)&addr, sizeof(addr));
-        if(crespuesta==0){
+        if (crespuesta == 0)
+        {
             cout << "Conectado al Servidor!" << endl;
         }
-        else{
-            cout<<"Error al conectarse. Vuelva a intentarlo mas tarde."<<endl;
+        else
+        {
+            cout << "Error al conectarse. Vuelva a intentarlo mas tarde." << endl;
             CerrarSocket();
             system("pause");
             exit(1);
         }
-
     }
     void Enviar(string respuesta)
     {
-        for(int i=0;i<respuesta.length();i++){
-            this->buffer[i]= respuesta[i];
+        for (int i = 0; i < respuesta.length(); i++)
+        {
+            this->buffer[i] = respuesta[i];
         }
 
         send(server, buffer, sizeof(buffer), 0);
         memset(buffer, 0, sizeof(buffer));
-
     }
 
     string Recibir()
     {
-        recv(server, buffer, sizeof(buffer), 0);
+        int iResult=0;
+        iResult=recv(server, buffer, sizeof(buffer), 0);
 
         string buff = buffer;
 
-        if(buff=="Timeout"){
-            cout<<"Sesion expirada"<<endl;
-            CerrarSocket();
-        }
-        memset(buffer, 0, sizeof(buffer));
+        // if (buff == "Timeout")
+        // {
+        //     cout << "Sesion expirada" << endl;
+        //     CerrarSocket();
+        // }
+        cout<<"101 - result "<<iResult<<endl;
+        if(iResult==-1){cout<<"Cliente desconectado , tiempo maximo de sesion agotado"<<endl;}//recibe -1 si se cerro el socket cliente
+
+        memset(buffer, 0, sizeof(buffer));//reinicia buffer
         return buff;
     }
 
     void CerrarSocket()
     {
-       closesocket(server);
-       WSACleanup();
-       cout << "Socket cerrado." << endl << endl;
+        closesocket(server);
+        WSACleanup();
+        cout << "Socket cerrado." << endl
+             << endl;
     }
 };
 
-string solicitarCalculo(){
+string solicitarCalculo()
+{
     string calculo;
-    cout<<"/Si desea volver al menu anterior ingrese la letra s/"<<endl;
-    cout<<"Ingrese la operacion: "<<endl;
-    //cin>>calculo;
+    cout << "/Si desea volver al menu anterior ingrese la letra s/" << endl;
+    cout << "Ingrese la operacion: " << endl;
+    // cin>>calculo;
     cin.ignore();
-    getline(cin,calculo);
-    cout<<"Solicitud Cliente: "<<calculo<<endl;
+    getline(cin, calculo);
+    cout << "Solicitud Cliente: " << calculo << endl;
     return calculo;
 }
 
 void menu(Client *&cliente)
 {
-    //contador de 2 minutos
-    int opcion;
-    string texto="";
+    // contador de 2 minutos
+    int opcion = 0;
+    string texto = "";
+  
+    cout << "Ingrese una opcion" << endl;
+    cout << "1- Realizar calculo " << endl;
+    cout << "2- Ver registro de actividades" << endl;
+    cout << "3- Cerrar sesion " << endl;
+    cin >> opcion;
 
-    cout<<"Ingrese una opcion"<<endl;
-    cout<<"1- Realizar calculo "<<endl;
-    cout<<"2- Ver registro de actividades"<<endl;
-    cout<<"3- Cerrar sesion "<<endl;
-    cin>>opcion;
-   
-    switch(opcion)
+    switch (opcion)
     {
-        case 1:cliente->Enviar("1"+solicitarCalculo());cout<<"Respuesta Servidor: "<<cliente->Recibir()<<endl;break;
-        case 2:
-            cliente->Enviar("2");
-            texto=cliente->Recibir();
-            for(int i=0;i<texto.size();i++){
-                if(texto[i]=='.')
-                {
-                    cout<<endl;
-                }
-                else{cout<<texto[i];}
-            };break;
-        case 3:cliente->CerrarSocket();break;
-        default:cout<<"Opcion incorrecta";break;//tiene que volver a preguntar
-    
-
-    // string resultado=cliente->Recibir();
-    // cout<<"Respuesta Servidor: "<<resultado<<endl;
+    case 1:
+        cliente->Enviar("1" + solicitarCalculo());
+        cout << "Respuesta Servidor: " << cliente->Recibir() << endl;
+        break;
+    case 2:
+        cliente->Enviar("2");
+        texto = cliente->Recibir();
+        for (int i = 0; i < texto.size(); i++)
+        {
+            if (texto[i] == '.')
+            {
+                cout << endl;
+            }
+            else
+            {
+                cout << texto[i];
+            }
+        };
+        break;
+    case 3:
+        cliente->CerrarSocket();
+        break;
+    default:
+        cout << "Opcion incorrecta";
+        break;
     }
 }
 
-
-/***********************************************************************/
-/********************************MAIN***********************************/
-/***********************************************************************/
 int main()
 {
-    setlocale(LC_CTYPE,"Spanish");// Spanish (de la librer�a locale.h) es para usar � y acento
     string var;
     Client *cliente = new Client();
     menu(cliente);
     return 0;
 }
-/***********************************************************************/
-/*******************************FIN MAIN********************************/
-/***********************************************************************/

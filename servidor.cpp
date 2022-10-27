@@ -2,7 +2,6 @@
 #include <winsock2.h>
 #include <string>
 #include <conio.h>
-#include <clocale> //es para usar ñ y acento
 #include <fstream> //Lib. para trabajar con archivos
 #include <ctime>   //Lib. para trabajar con fechas / tiempos
 #include <cstdlib>
@@ -27,7 +26,6 @@ string currentDateTime() {
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %X", now);
     return buffer;
 }
-
 
 void escribir(string mensaje){
 
@@ -78,8 +76,8 @@ public:
 
         while (!serverIniciado)
         {
-            std::string ipInput = "127.0.0.1";
-            std::string puertoInput = "5000";
+            string ipInput = "127.0.0.1";
+            string puertoInput = "5000";
 
             cout << "Configurando server..." << endl;
             cout << endl;
@@ -101,6 +99,25 @@ public:
         }
 
         IniciarServer();
+        //**TIMER
+        // int opt=1;
+        // setsockopt(server, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+        // //Hay dos tipos de opciones de socket: opciones booleanas que habilitan o deshabilitan una característica
+        // // o comportamiento y opciones que requieren una estructura o un valor entero. Para habilitar una opción booleana, 
+        // //el parámetro optval apunta a un entero distinto de cero. Para deshabilitar la opción optval apunta a un número entero igual a cero. 
+        // //El parámetro optlen debe ser igual a sizeof(int)para las opciones booleanas. Para otras opciones, optval apunta a un entero o estructura 
+        // //que contiene el valor deseado para la opción, y optlen es la longitud del entero o estructura.
+        // int Timer = 6000;//6 segundos
+        // //iVal = 1000;
+        // //SO_RCVTIMEO-->Establece el tiempo de espera, en milisegundos, para bloquear las llamadas recibidas.
+        // if(setsockopt(server, SOL_SOCKET, SO_RCVTIMEO,(char *) &Timer, sizeof(Timer)) == SOCKET_ERROR )
+        // {
+        //     cout<<"TIEMPO AGOTADO  "<<endl;
+
+        //     closesocket(server);
+        //     WSACleanup();
+        // }
+
 
         bind(server, (SOCKADDR *)&serverAddr, sizeof(serverAddr));
         listen(server, 0);
@@ -108,33 +125,7 @@ public:
         cout << "Escuchando para conexiones entrantes." << endl;
     }
 
-    string Recibir()
-    {
-        fd_set fds;
-        struct timeval tv;
-
-        tv.tv_sec = 120;
-        tv.tv_usec = 0;
-
-        FD_ZERO(&fds);
-        FD_SET(client, &fds);
-
-        int n = select(client, &fds, NULL, NULL, &tv);
-
-        if (n == 0)
-        {
-            cout << "Timeout: cliente desconectado" << endl;
-            CerrarSocket(usuarioConectado);
-        }
-        recv(client, buffer, sizeof(buffer), 0); // recibe mensaje
-
-        string buff = buffer; // guardo valor recibido
-
-        memset(buffer, 0, sizeof(buffer)); // vacia el buffer
-        return buff;
-    }
-
-    void Enviar(string respuesta)
+     void Enviar(string respuesta)
     {
         for (int i = 0; i < (int)respuesta.length(); i++)
         {
@@ -144,6 +135,34 @@ public:
         send(client, buffer, sizeof(buffer), 0);
         memset(buffer, 0, sizeof(buffer));
     }
+
+    string Recibir()
+    {
+        fd_set fds;
+        struct timeval tv;
+
+        tv.tv_sec = 10;//2 minutos
+        tv.tv_usec = 0;
+
+        FD_ZERO(&fds);
+        FD_SET(client, &fds);
+
+        int n = select(client, &fds, NULL, NULL, &tv);
+
+        if (n == 0)
+        {
+            //cout << "Cliente desconectado , tiempo maximo de sesion agotado" << endl;
+            //CerrarSocket(usuarioConectado);
+            closesocket(client);
+        }
+        recv(client, buffer, sizeof(buffer), 0); // recibe mensaje
+
+        string buff = buffer; // guardo valor recibido
+
+        memset(buffer, 0, sizeof(buffer)); // vacia el buffer
+        return buff;
+    }
+
 
     void ConectarSocket()
     {
@@ -191,7 +210,7 @@ void manejarPeticion(Server *&Servidor)
     char caracterErroneo;
     bool bandera=false;
     peticion = Servidor->Recibir();//en caso de recibir un espacio vacio corta ahi el mensaje
-    
+    cout<<"Peticion: "<<peticion<<endl;
     cout<<"Tamanio: "<<peticion.size()<<endl;
     
     if(peticion[0] == '1')
@@ -214,7 +233,7 @@ void manejarPeticion(Server *&Servidor)
                 break;
             }
         }
-        cout<<"170--> "<<peticionChar<<endl;
+        cout<<"226--> "<<peticionChar<<endl;
         //falta si ingresa cadena vacia
         if(peticion.size()>21){//maximo caracteres contando el 1
             cout<<"La operacion debe tener entre 1 y 20 caracteres"<<endl;
@@ -353,7 +372,7 @@ int main()
 
     while (true)
     {
-        setlocale(LC_CTYPE, "Spanish"); // Spanish (de la librería locale.h) es para usar ñ y acento
+        
 
         Server *Servidor = new Server();
 
