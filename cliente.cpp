@@ -1,37 +1,42 @@
-#include <iostream>
 #include <winsock2.h>
-#include <conio.h>
-#include <string>
-#include <algorithm>
-#include <ctime>
-#include <cstdlib>
+#include <iostream>
 #include <vector>
+#include <string>
+#include <cstdlib>
+
 
 using namespace std;
+bool tiempo_espera_se_agoto = false;
 
-vector<string> verificarIpYPuerto()
+vector<string> IngresarPuertoEIP()
 {
+    system("cls");
+    vector<string> validaciones;
+    string PUERTO = "5000";
+    string IP = "127.0.0.1";
 
-    std::string ipInput = "127.0.0.1";
-    std::string puertoInput = "5000";
-    vector<string> datos;
 
-    // while(ipInput==""){
-    //     cout<<"Ingrese la direccion IP: ";
-    //     cin>>ipInput;
-    //     system("CLS");
+
+    // cout<<"Ingrese la direccion IP: ";
+    // cin>>IP;
+    // if(IP!="127.0.0.1")
+    // {
+    //     cout<<endl;   
+    //     cout<<"FALLO - Direccion IP erronea"<<endl;
+    //     IngresarPuertoEIP();
+    // }
+    // cout<<"Ingrese el puerto: ";
+    // cin>>PUERTO;
+    // if(PUERTO!="5000"){
+    //     cout<<endl;   
+    //     cout<<"FALLO - Direccion IP erronea"<<endl;
+    //     IngresarPuertoEIP();
     // }
 
-    // while(puertoInput==""){
-    //     cout<<"Ingrese el puerto: ";
-    //     cin>>puertoInput;
-    //     system("CLS");
-    // }
+    validaciones.push_back(IP);
+    validaciones.push_back(PUERTO);
 
-    datos.push_back(ipInput);
-    datos.push_back(puertoInput);
-
-    return datos;
+    return validaciones;
 }
 
 class Client
@@ -40,27 +45,22 @@ public:
     WSADATA WSAData;
     SOCKET server;
     SOCKADDR_IN addr;
-    char buffer[1024] = "";
+    char buffer[2000] = "";
     Client()
     {
-        cout << "Conectando al servidor..." << endl
-             << endl;
-
+        cout << "Conectando al servidor..." <<endl<< endl;
         WSAStartup(MAKEWORD(2, 0), &WSAData);
         server = socket(AF_INET, SOCK_STREAM, 0);
+        vector<string> validaciones = IngresarPuertoEIP();
+        string ip_user = validaciones[0];
 
-        vector<string> datos = verificarIpYPuerto();
-
-        string s = datos[0];
-        int n = s.length();
-        char ip[n + 1];
-        strcpy(ip, s.c_str());
-
+        int t = ip_user.length();
+        char ip[t + 1];
+        strcpy(ip, ip_user.c_str());
+        
         addr.sin_addr.s_addr = inet_addr(ip);
-
         addr.sin_family = AF_INET;
-
-        addr.sin_port = htons(stol(datos[1]));
+        addr.sin_port = htons(stol(validaciones[1]));
 
         int crespuesta = connect(server, (SOCKADDR *)&addr, sizeof(addr));
         if (crespuesta == 0)
@@ -75,102 +75,105 @@ public:
             exit(1);
         }
     }
-    void Enviar(string respuesta)
+    void Enviar(string mensaje)
     {
-        for (int i = 0; i < respuesta.length(); i++)
+
+        for (int i = 0; i < mensaje.length(); i++)
         {
-            this->buffer[i] = respuesta[i];
+            this->buffer[i] = mensaje[i];
         }
 
-        send(server, buffer, sizeof(buffer), 0);
+        send(server, buffer, sizeof(buffer), 0);//cliente envia mensaje
         memset(buffer, 0, sizeof(buffer));
     }
 
     string Recibir()
     {
-        int iResult=0;
-        iResult=recv(server, buffer, sizeof(buffer), 0);
+        int iResult = 0;
+        iResult = recv(server, buffer, sizeof(buffer), 0);//recibe mensaje del servidor
+        string respuesta_cliente = buffer;
 
-        string buff = buffer;
-
-        // if (buff == "Timeout")
-        // {
-        //     cout << "Sesion expirada" << endl;
-        //     CerrarSocket();
-        // }
-        cout<<"101 - result "<<iResult<<endl;
-        if(iResult==-1){cout<<"Cliente desconectado , tiempo maximo de sesion agotado"<<endl;}//recibe -1 si se cerro el socket cliente
-
-        memset(buffer, 0, sizeof(buffer));//reinicia buffer
-        return buff;
+        if (iResult == -1)// recibe -1 si se cerro el socket cliente
+        {
+            cout << "Cliente desconectado , tiempo maximo de sesion agotado" << endl;
+            tiempo_espera_se_agoto = true;
+            system("pause");
+        } 
+        memset(buffer, 0, sizeof(buffer)); // reinicia buffer
+        return respuesta_cliente;
     }
 
     void CerrarSocket()
     {
         closesocket(server);
         WSACleanup();
-        cout << "Socket cerrado." << endl
-             << endl;
+        cout<<"cliente socket cerrado"<<endl;
     }
 };
 
-string solicitarCalculo()
-{
-    string calculo;
-    cout << "/Si desea volver al menu anterior ingrese la letra s/" << endl;
-    cout << "Ingrese la operacion: " << endl;
-    // cin>>calculo;
-    cin.ignore();
-    getline(cin, calculo);
-    cout << "Solicitud Cliente: " << calculo << endl;
-    return calculo;
-}
-
 void menu(Client *&cliente)
 {
-    // contador de 2 minutos
     int opcion = 0;
-    string texto = "";
-  
+    string tamanio = "";
+    string calculo = "";
+
+    system("cls");
+   
     cout << "Ingrese una opcion" << endl;
     cout << "1- Realizar calculo " << endl;
     cout << "2- Ver registro de actividades" << endl;
     cout << "3- Cerrar sesion " << endl;
     cin >> opcion;
 
+
+    system("cls");
     switch (opcion)
     {
     case 1:
-        cliente->Enviar("1" + solicitarCalculo());
-        cout << "Respuesta Servidor: " << cliente->Recibir() << endl;
+        cout << "/Si desea volver al menu anterior ingrese la palabra volver/" << endl;
+        cout << "Ingrese la operacion: " << endl;
+        cin.ignore();
+        getline(cin, calculo);
+        if (calculo == "volver")
+        {
+            menu(*&cliente);
+        }
+        cliente->Enviar("1" + calculo);
+        cout << "Resultado: " << cliente->Recibir() << endl;
+        if(tiempo_espera_se_agoto == false){system("pause");menu(*&cliente);}
         break;
     case 2:
         cliente->Enviar("2");
-        texto = cliente->Recibir();
-        for (int i = 0; i < texto.size(); i++)
-        {
-            if (texto[i] == '.')
+        tamanio = cliente->Recibir();
+        cliente->Enviar("2");
+        if(tiempo_espera_se_agoto == false){
+            for (int i = 0; i < stoi(tamanio); i++)
             {
-                cout << endl;
+                cout<<cliente->Recibir()<<endl;
+                cliente->Enviar("");
+                
             }
-            else
-            {
-                cout << texto[i];
-            }
-        };
+        system("pause");
+        menu(*&cliente);
+        }
         break;
     case 3:
+        cliente->Enviar("3");
+        cliente->Recibir();
         cliente->CerrarSocket();
         break;
     default:
-        cout << "Opcion incorrecta";
+        cout <<"Opcion incorrecta" << endl;
+        system("pause");
+        menu(*&cliente);
         break;
     }
+    system("cls");
+    
 }
 
 int main()
 {
-    string var;
     Client *cliente = new Client();
     menu(cliente);
     return 0;
