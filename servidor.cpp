@@ -2,11 +2,11 @@
 #include <iostream>
 #include <cstdlib>
 #include <stdio.h>
-#include <windns.h> //es utilizado por el Sistema de nombres de dominio (DNS)
+#include <windns.h> //(DNS)
 #include <math.h>
 #include <ctype.h> //isDigit
-#include <fstream> //Lib. para trabajar con archivos
-#include <ctime>   //Lib. para trabajar con fechas / tiempos
+#include <fstream> //archivos
+#include <ctime>   //tiempo-fecha
 #include <string>
 
 using namespace std;
@@ -28,7 +28,7 @@ void escribir(string mensaje)
 
     ofstream archivo;
 
-    archivo.open("server.log.txt", ios::app | ios::binary); // nombre y modo , out si no existe se crea
+    archivo.open("server.log.txt", ios::app);
 
     if (archivo.fail())
     {
@@ -46,7 +46,7 @@ int getRenglones()
     string texto = "";
     int cant_lineas = 0;
     ifstream archivo;
-    archivo.open("server.log.txt", ios::in | ios::binary);
+    archivo.open("server.log.txt", ios::in);
     if (archivo.is_open())
     {
         while (!archivo.eof())
@@ -59,14 +59,13 @@ int getRenglones()
     se_debe_retornar_tamanio = false;
     return cant_lineas;
 }
-
 class Server
 {
 public:
     WSADATA WSAData;
     SOCKET server, client;
     SOCKADDR_IN serverAddr, clientAddr;
-    char buffer[2000] = ""; // para poder guardar el txt
+    char buffer[2000] = "";
     Server()
     {
         WSAStartup(MAKEWORD(2, 0), &WSAData);
@@ -78,7 +77,7 @@ public:
         serverAddr.sin_port = htons(stol("5000"));
 
         bind(server, (SOCKADDR *)&serverAddr, sizeof(serverAddr));
-        listen(server, 0);
+        listen(server, SOMAXCONN );
         escribir(" =============================.");
         escribir(" =======Inicia Servidor=======.");
         escribir(" =============================.");
@@ -119,7 +118,7 @@ public:
 
         string mensaje = buffer; // guardo valor recibido
 
-        memset(buffer, 0, sizeof(buffer)); // vacia el buffer
+        memset(buffer, 0, sizeof(buffer)); // reinicia el buffer
         return mensaje;
     }
 
@@ -133,11 +132,10 @@ public:
         }
     }
 
-    void CerrarSocket(string username)
+    void CerrarSocket()
     {
         closesocket(client);
         WSACleanup();
-        escribir(" Conexion Cerrada ");
     }
 
     int getPuerto()
@@ -146,11 +144,12 @@ public:
     }
 };
 
-void leerYEnviarTexto(Server *&Servidor){
+void leerYEnviarTexto(Server *&Servidor)
+{
 
     string texto = "";
     ifstream archivo;
-    archivo.open("server.log.txt", ios::in | ios::binary);
+    archivo.open("server.log.txt", ios::in);
     if (archivo.is_open())
     {
         while (!archivo.eof())
@@ -158,25 +157,24 @@ void leerYEnviarTexto(Server *&Servidor){
             getline(archivo, texto);
             Servidor->Enviar(texto);
             Servidor->Recibir();
-
         }
         archivo.close();
     }
-
 }
 
-void manejarPeticion(Server *&Servidor)
+void manejoDePeticion(Server *&Servidor)
 {
 
     char aux[20];
     int num1, num2, resultado = 0, cont = 0, i = 0, factorial = 1, contador = 0, cantOperadores = 0;
     char *p = NULL;
-    string operacion = " ";
+    string operacion = "";
     string respuesta_error = "";
     char peticionChar[20] = "";
     string peticion = "";
     char caracterErroneo;
     peticion = Servidor->Recibir(); // recibe mensaje
+
     if (peticion[0] == '1')
     {
 
@@ -187,7 +185,7 @@ void manejarPeticion(Server *&Servidor)
 
         for (int y = 0; y < peticion.length() - 1; y++) // le resto el 1 que tiene adelante
         {
-            if (peticionChar[y] == '+' || peticionChar[y] == '-' || peticionChar[y] == '/' || peticionChar[y] == '*' || peticionChar[y] == '!' || peticionChar[y] == '^' || isdigit(peticionChar[y]) != XST_NULL || peticionChar[y] == ' ') // Validación de caracteres de la operación
+            if (peticionChar[y] == '+' || peticionChar[y] == '-' || peticionChar[y] == '/' || peticionChar[y] == '*' || peticionChar[y] == '!' || peticionChar[y] == '^' || isdigit(peticionChar[y]) != XST_NULL) // Validación de caracteres de la operación
             {
                 cont++;
             }
@@ -198,7 +196,7 @@ void manejarPeticion(Server *&Servidor)
             }
         }
 
-        if (peticion.size() > 21)
+        if (peticion.size() > 21 || peticion.size() < 2)
         { // maximo caracteres contando el 1
             Servidor->Enviar("La operacion debe tener entre 1 y 20 caracteres");
         }
@@ -225,7 +223,8 @@ void manejarPeticion(Server *&Servidor)
                     p = strchr(peticionChar, '+');
                     if (*(p + 1) == '\0') // caracter vacio despues del operador, fin de la cadena
                     {
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [c]" << endl;
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + aux + "]");
                         break;
                     }
                     else if (isdigit(*(p + 1)) == true)
@@ -241,8 +240,9 @@ void manejarPeticion(Server *&Servidor)
                     num1 = atoi(aux);
                     p = strchr(peticionChar, '-');
                     if (*(p + 1) == '\0')
-                    { // caracter vacio despues del operador,fin de la cadena
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [c]" << endl;
+                    {
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + aux + "]");
                         break;
                     }
                     else if (isdigit(*(p + 1)) == true)
@@ -258,8 +258,9 @@ void manejarPeticion(Server *&Servidor)
                     num1 = atoi(aux);
                     p = strchr(peticionChar, '/');
                     if (*(p + 1) == '\0')
-                    { // caracter vacio despues del operador,fin de la cadena
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [c]" << endl;
+                    {
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + aux + "]");
                         break;
                     }
                     else if (isdigit(*(p + 1)) == true)
@@ -275,8 +276,9 @@ void manejarPeticion(Server *&Servidor)
                     num1 = atoi(aux);
                     p = strchr(peticionChar, '*');
                     if (*(p + 1) == '\0')
-                    { // caracter vacio despues del operador,fin de la cadena
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [c]" << endl;
+                    {
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + aux + "]");
                         break;
                     }
                     else if (isdigit(*(p + 1)) == true)
@@ -295,12 +297,16 @@ void manejarPeticion(Server *&Servidor)
                         factorial = factorial * j;
                     }
                     p = strchr(peticionChar, '!');
-                    if (*(p + 1) != '\0')
-                    { // caracter vacio despues del operador,fin de la cadena
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [a!b]" << endl;
+                    if (isdigit(*(p + 1)) == true)
+                    {
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + peticionChar[y - 1] + p + "]");
                         break;
                     }
-                    resultado = factorial;
+                    else
+                    {
+                        resultado = factorial;
+                    }
                 }
                 if (peticionChar[y] == '^')
                 {
@@ -309,8 +315,9 @@ void manejarPeticion(Server *&Servidor)
                     num1 = atoi(aux);
                     p = strchr(peticionChar, '^');
                     if (*(p + 1) == '\0')
-                    { // caracter vacio despues del operador,fin de la cadena
-                        cout << "No se pudo realizar la operacion, la operacion esta mal formada: [c]" << endl;
+                    {
+                        respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada: [";
+                        Servidor->Enviar(respuesta_error + aux + "]");
                         break;
                     }
                     else if (isdigit(*(p + 1)) == true)
@@ -320,14 +327,13 @@ void manejarPeticion(Server *&Servidor)
                     }
                 }
             }
-            // bandera para saber si falta primer operando
             if (p == NULL)
-            { // Validación de operación, espacio entre el principio y operador o falta operador
-                cout << "No se pudo realizar la operacion, la operacion esta mal formada:[b]" << endl;
+            {
+                respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada:[";
+                Servidor->Enviar(respuesta_error + peticionChar + "]");
             }
             if (cantOperadores > 1) // cantidad de operadores , tiene que ser uno
             {
-                system("pause");
                 respuesta_error = "No se pudo realizar la operacion, la operacion esta mal formada:[";
                 Servidor->Enviar(respuesta_error + p + "]");
             }
@@ -345,13 +351,12 @@ void manejarPeticion(Server *&Servidor)
             Servidor->Enviar(to_string(getRenglones()));
         }
         leerYEnviarTexto(Servidor);
-
+        
     }
     else if (peticion[0] == '3')
     {
         Servidor->Enviar("");
         cliente_desconectado = true;
-        
     }
 }
 
@@ -359,12 +364,14 @@ int main()
 {
     Server *Servidor = new Server();
     Servidor->ConectarSocket();
-    while (cliente_desconectado==false)
+    while (true)
     {
-        manejarPeticion(Servidor);
+
+        while (cliente_desconectado == false)
+        {
+            manejoDePeticion(Servidor);
+        }
+        cliente_desconectado = false;
+        Servidor->ConectarSocket();
     }
-    Servidor->CerrarSocket("franco");
-    cliente_desconectado = false;
-    system("cls");
-    main();
 }

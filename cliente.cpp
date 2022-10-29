@@ -1,6 +1,5 @@
 #include <winsock2.h>
 #include <iostream>
-#include <vector>
 #include <string>
 #include <cstdlib>
 
@@ -8,35 +7,16 @@
 using namespace std;
 bool tiempo_espera_se_agoto = false;
 
-vector<string> IngresarPuertoEIP()
+string IngresarPuertoEIP()
 {
     system("cls");
-    vector<string> validaciones;
-    string PUERTO = "5000";
-    string IP = "127.0.0.1";
+    string PUERTO = "";
+    
+    cout<<"Ingrese el puerto: ";
+    cin>>PUERTO;
 
 
-
-    // cout<<"Ingrese la direccion IP: ";
-    // cin>>IP;
-    // if(IP!="127.0.0.1")
-    // {
-    //     cout<<endl;   
-    //     cout<<"FALLO - Direccion IP erronea"<<endl;
-    //     IngresarPuertoEIP();
-    // }
-    // cout<<"Ingrese el puerto: ";
-    // cin>>PUERTO;
-    // if(PUERTO!="5000"){
-    //     cout<<endl;   
-    //     cout<<"FALLO - Direccion IP erronea"<<endl;
-    //     IngresarPuertoEIP();
-    // }
-
-    validaciones.push_back(IP);
-    validaciones.push_back(PUERTO);
-
-    return validaciones;
+    return PUERTO;
 }
 
 class Client
@@ -51,16 +31,12 @@ public:
         cout << "Conectando al servidor..." <<endl<< endl;
         WSAStartup(MAKEWORD(2, 0), &WSAData);
         server = socket(AF_INET, SOCK_STREAM, 0);
-        vector<string> validaciones = IngresarPuertoEIP();
-        string ip_user = validaciones[0];
-
-        int t = ip_user.length();
-        char ip[t + 1];
-        strcpy(ip, ip_user.c_str());
+        string validacion_puerto = IngresarPuertoEIP();
+        if(validacion_puerto!="5000"){CerrarSocket();}
         
-        addr.sin_addr.s_addr = inet_addr(ip);
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
         addr.sin_family = AF_INET;
-        addr.sin_port = htons(stol(validaciones[1]));
+        addr.sin_port = htons(stol(validacion_puerto));
 
         int crespuesta = connect(server, (SOCKADDR *)&addr, sizeof(addr));
         if (crespuesta == 0)
@@ -95,7 +71,7 @@ public:
 
         if (iResult == -1)// recibe -1 si se cerro el socket cliente
         {
-            cout << "Cliente desconectado , tiempo maximo de sesion agotado" << endl;
+            cout << "Cliente desconectado por inactividad" << endl;
             tiempo_espera_se_agoto = true;
             system("pause");
         } 
@@ -107,7 +83,6 @@ public:
     {
         closesocket(server);
         WSACleanup();
-        cout<<"cliente socket cerrado"<<endl;
     }
 };
 
