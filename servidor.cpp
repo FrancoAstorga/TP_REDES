@@ -170,7 +170,7 @@ void manejoDePeticion(Server *&Servidor)
     int num1, num2, resultado = 0, cont = 0, factorial = 1, cantOperadores = 0;
     char *p = NULL;
     string respuesta_error = "";
-    char peticionChar[20] = "";
+    char peticionChar[100] = "";
     bool ocurrio_error=false;
     char primerOperador;
     string peticion = "";
@@ -240,7 +240,7 @@ void manejoDePeticion(Server *&Servidor)
                 if (peticionChar[y] == '-')
                 {
                     cantOperadores++;
-                    if(cantOperadores==1){primerOperador=peticionChar[y];}
+                    if(cantOperadores==1){primerOperador=peticionChar[y];}	
                     strncpy(aux, peticionChar, cont);
                     num1 = atoi(aux);
                     p = strchr(peticionChar, '-');
@@ -354,7 +354,7 @@ void manejoDePeticion(Server *&Servidor)
             else if(ocurrio_error!=true)
             {
                 delete p;
-                Servidor->Enviar(to_string(resultado));
+                Servidor->Enviar("Resultado: "+to_string(resultado));
             }
         }
     }

@@ -6,7 +6,7 @@
 
 using namespace std;
 bool tiempo_espera_se_agoto = false;
-
+bool cliente_se_desconecta=false;
 string IngresarPuerto()
 {
     system("cls");
@@ -69,13 +69,7 @@ public:
         iResult = recv(server, buffer, sizeof(buffer), 0);//recibe mensaje del servidor
         string respuesta_cliente = buffer;
 
-        // if (iResult == -1)
-        // {
-        //     cout << "Cliente desconectado por inactividad" << endl;
-        //     tiempo_espera_se_agoto = true;
-        //     system("pause");
-        // } 
-        if(iResult==SOCKET_ERROR){
+       if(iResult==SOCKET_ERROR){
             if(WSAGetLastError()==WSAECONNABORTED){
                 cout << "Cliente desconectado por inactividad" << endl;
                 tiempo_espera_se_agoto = true;
@@ -100,14 +94,16 @@ void menu(Client *&cliente)
     string tamanio = "";
     string calculo = "";
 
+
     system("cls");
-   
+
     cout << "Ingrese una opcion" << endl;
     cout << "1- Realizar calculo " << endl;
     cout << "2- Ver registro de actividades" << endl;
     cout << "3- Cerrar sesion " << endl;
     cin >> opcion;
 
+    cout<<"opcion"<<opcion<<endl;
 
     system("cls");
     switch (opcion)
@@ -122,14 +118,14 @@ void menu(Client *&cliente)
             menu(*&cliente);
         }
         cliente->Enviar("1" + calculo);
-        cout << "Resultado: " << cliente->Recibir() << endl;
-        if(tiempo_espera_se_agoto == false){system("pause");menu(*&cliente);}
+        cout << cliente->Recibir() << endl;
+        if(tiempo_espera_se_agoto == false && cliente_se_desconecta==false){system("pause");menu(*&cliente);}
         break;
     case 2:
         cliente->Enviar("2");
         tamanio = cliente->Recibir();
         cliente->Enviar("2");
-        if(tiempo_espera_se_agoto == false){
+        if(tiempo_espera_se_agoto == false && cliente_se_desconecta==false){
             for (int i = 0; i < stoi(tamanio); i++)
             {
                 cout<<cliente->Recibir()<<endl;
@@ -142,6 +138,7 @@ void menu(Client *&cliente)
         }
         break;
     case 3:
+        cliente_se_desconecta=true;
         cliente->Enviar("3");
         cliente->Recibir();
         cliente->CerrarSocket();
@@ -153,7 +150,7 @@ void menu(Client *&cliente)
         break;
     }
     system("cls");
-    
+
 }
 
 int main()
